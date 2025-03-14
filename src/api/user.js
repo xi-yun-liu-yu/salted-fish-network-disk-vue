@@ -17,5 +17,5 @@ export const userLoginService = (registerData) =>{
     for(let key in registerData) {
         params.append(key, registerData[key]);
     }
-    return  request.post('/users/login', params);
+    return  request.get('/users/login' + '/' + registerData['username'] + '/' + registerData['password']);
 }

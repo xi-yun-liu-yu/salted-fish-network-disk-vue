@@ -5,7 +5,8 @@
 
 <template>
 <!--  <LoginVue />-->
-  <LayoutVue />
+<!--  <LayoutVue />-->
+  <router-view></router-view>
 </template>
 
 <style scoped>

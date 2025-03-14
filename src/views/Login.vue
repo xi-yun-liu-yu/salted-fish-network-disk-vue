@@ -57,7 +57,8 @@ const rules ={
       {validator: checkRePassword, trigger: 'blur'},
   ]
 }
-
+import {useRouter}  from "vue-router";
+const router = useRouter()
 //调用请求登录的接口
 const Login = async ()=>{
   let result = await userLoginService(registerData.value);
@@ -69,6 +70,8 @@ const Login = async ()=>{
       showClose: true,
       grouping: true,
     });
+    //去首页
+    await router.push('/main');
   }else {
     ElMessage({
       message: '登录失败' + result.msg ? result.msg : '服务器无msg返回',
