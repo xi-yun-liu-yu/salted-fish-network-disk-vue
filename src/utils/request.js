@@ -14,7 +14,7 @@ instance.interceptors.response.use(
     },
     err=>{
         ElMessage.error({
-            message:'服务异常',
+            message: '服务异常',
             grouping: true
         })
         return Promise.reject(err);

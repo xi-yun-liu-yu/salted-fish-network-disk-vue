@@ -4,13 +4,32 @@ import {
   Promotion,
   UserFilled,
   User,
-  Crop,
-  EditPen,
   SwitchButton,
   CaretBottom, UploadFilled, Download
 } from '@element-plus/icons-vue'
-import avatar from '@/assets/default.png'
-import TransferListVue from '@/views/Layout.vue'
+
+import {useActiveStore} from '@/stores/active.js'
+import {useUserInfoStore} from "@/stores/userInfo.js";
+import {useTokenStore} from "@/stores/token.js";
+import {useRouter}  from "vue-router";
+const router = useRouter()
+
+const userStore = useUserInfoStore();
+const activeStore = useActiveStore();
+const tokenStore = useTokenStore();
+
+const setActive = (index) =>{
+  activeStore.setActive(index);
+}
+
+const exit = async () =>{
+  userStore.removeUserInfo();
+  activeStore.removeActive();
+  tokenStore.removeToken();
+  localStorage.setItem('isLoggedIn', 'false');
+  await router.replace("/");
+
+}
 </script>
 
 <template>
@@ -18,9 +37,8 @@ import TransferListVue from '@/views/Layout.vue'
     <!-- 左侧菜单 -->
     <el-aside width="250px" style="background-color: #409EFF">
       <div class="el-aside__logo"></div>
-      <el-menu active-text-color="#ffd04b" background-color="#409EFF"  text-color="#fff" router>
-<!--      <el-menu active-text-color="#ffd04b" background-color="#409EFF"  text-color="#fff" router>-->
-        <el-menu-item index = "/file/FileManage">
+      <el-menu :default-active = activeStore.active active-text-color="#ffd04b" background-color="#409EFF"  text-color="#fff" router>
+        <el-menu-item index = "/main/file/FileManage" name="fileManage" @click = "setActive('/main/file/FileManage')">
           <el-icon>
             <Management />
           </el-icon>
@@ -33,13 +51,13 @@ import TransferListVue from '@/views/Layout.vue'
             </el-icon>
             <span>传输管理</span>
           </template>
-          <el-menu-item index = "/file/FileUpload">
+          <el-menu-item index = "/main/file/FileUpload" name="fileUpload" @click = "setActive('/main/file/FileUpload')">
             <el-icon>
               <UploadFilled />
             </el-icon>
             <span>上传文件</span>
           </el-menu-item>
-          <el-menu-item index = "/file/FileDownload">
+          <el-menu-item index = "/main/file/FileDownload" name="fileDownload" @click = "setActive('/main/file/FileDownload')">
             <el-icon>
               <Download />
             </el-icon>
@@ -47,7 +65,7 @@ import TransferListVue from '@/views/Layout.vue'
           </el-menu-item>
         </el-sub-menu>
 
-        <el-menu-item index = "/user/UserInfo">
+        <el-menu-item index = "/main/user/UserInfo" name="userInfo" @click = "setActive('/main/user/UserInfo')">
           <el-icon>
             <UserFilled />
           </el-icon>
@@ -90,17 +108,17 @@ import TransferListVue from '@/views/Layout.vue'
 
         <el-dropdown placement="bottom-end">
                     <span class="el-dropdown__box">
-                        <el-avatar :src="avatar" />
+                        <el-avatar :src="userStore.avatarUrl" />
                         <el-icon>
                             <CaretBottom />
                         </el-icon>
                     </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="profile" :icon="User">基本资料</el-dropdown-item>
+<!--              <el-dropdown-item command="profile" :icon="User">基本资料</el-dropdown-item>-->
 <!--              <el-dropdown-item command="avatar" :icon="Crop">更换头像</el-dropdown-item>-->
 <!--              <el-dropdown-item command="password" :icon="EditPen">重置密码</el-dropdown-item>-->
-              <el-dropdown-item command="logout" :icon="SwitchButton">退出登录</el-dropdown-item>
+              <el-dropdown-item command="logout" :icon="SwitchButton" @click = "exit">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>

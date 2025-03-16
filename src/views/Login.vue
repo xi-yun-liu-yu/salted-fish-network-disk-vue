@@ -21,7 +21,7 @@ const checkRePassword = (rule,value,callback)=>{
   }
 }
 
-import {userLoginService, userRegisterService} from '@/api/user.js'
+import {userGetService, userLoginService, userRegisterService} from '@/api/user.js'
 //调用请求注册的接口
 const register = async ()=>{
   let result = await userRegisterService(registerData.value);
@@ -58,6 +58,11 @@ const rules ={
   ]
 }
 import {useRouter}  from "vue-router";
+import {useTokenStore} from "@/stores/token.js";
+import {useUserInfoStore} from "@/stores/userInfo.js";
+import {useActiveStore} from "@/stores/active.js";
+const activeStore = useActiveStore();
+
 const router = useRouter()
 //调用请求登录的接口
 const Login = async ()=>{
@@ -70,7 +75,15 @@ const Login = async ()=>{
       showClose: true,
       grouping: true,
     });
+    const tokenStore = useTokenStore();
+
+    tokenStore.setToken(result.data);
+    result = await userGetService(tokenStore.token);
+    const userInfoStore = useUserInfoStore();
+    userInfoStore.setUserInfo(result.data);
+    activeStore.setActive('/main/file/FileManage');
     //去首页
+    localStorage.setItem('isLoggedIn', 'true');
     await router.push('/main');
   }else {
     ElMessage({
