@@ -7,6 +7,10 @@ import {
   CircleClose
 } from '@element-plus/icons-vue'
 import openFile from '@/utils/openFile.js'
+import {ref} from "vue";
+
+const uploadList = ref([])
+const finishList = ref([])
 </script>
 
 <template>
@@ -132,25 +136,7 @@ export default {
         '已完成': 'success',
         '已暂停': 'warning',
         '失败': 'danger'
-      },
-      uploadList: [
-        {
-          fileName: '项目文档.pdf',
-          progress: 65,
-          speed: '1.2MB/s',
-          status: '传输中'
-        },
-        // 更多模拟数据...
-      ],
-      finishList: [
-        {
-          fileName: '设计素材.zip',
-          finishData: '2025/3/8',
-          fileSize: '100KB',
-          filePath: 'S:\\'
-        },
-        // 更多模拟数据...
-      ]
+      }
     }
   },
   methods: {
@@ -246,6 +232,5 @@ export default {
     }
   }
 
-  // 其他原有样式保持不变...
 }
 </style>

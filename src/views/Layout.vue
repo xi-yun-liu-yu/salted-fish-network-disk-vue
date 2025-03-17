@@ -11,12 +11,14 @@ import {
 import {useActiveStore} from '@/stores/active.js'
 import {useUserInfoStore} from "@/stores/userInfo.js";
 import {useTokenStore} from "@/stores/token.js";
+import {usePathStore} from "@/stores/path.js"
 import {useRouter}  from "vue-router";
 const router = useRouter()
 
 const userStore = useUserInfoStore();
 const activeStore = useActiveStore();
 const tokenStore = useTokenStore();
+const pathStore = usePathStore();
 
 const setActive = (index) =>{
   activeStore.setActive(index);
@@ -26,6 +28,7 @@ const exit = async () =>{
   userStore.removeUserInfo();
   activeStore.removeActive();
   tokenStore.removeToken();
+  pathStore.removePath();
   localStorage.setItem('isLoggedIn', 'false');
   await router.replace("/");
 
@@ -104,7 +107,7 @@ const exit = async () =>{
     <el-container>
       <!-- 头部区域 -->
       <el-header >
-        <div>用户：<strong>用户名</strong></div>
+        <div style="font-family: 微软雅黑;font-size :30px">{{userStore.nickname}}的资源空间</div>
 
         <el-dropdown placement="bottom-end">
                     <span class="el-dropdown__box">
@@ -135,6 +138,11 @@ const exit = async () =>{
 </template>
 
 <style lang="scss" scoped>
+
+
+
+//
+
 .layout-container {
   height: 100vh;
 
@@ -193,7 +201,6 @@ const exit = async () =>{
             opacity: 0.4;
           }
         }
-
         &.is-active {
           border: 1px solid rgba(64, 158, 255, 0.3);
           background: rgba(64, 158, 255, 0.05) !important;

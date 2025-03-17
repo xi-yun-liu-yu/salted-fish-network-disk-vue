@@ -465,9 +465,7 @@ const handleAvatarChange = async (event) => {
     const type = file.type.substring(file.type.indexOf('/') + 1)
     const temp = userStore.avatarUrl.split('/')
     const fileName = temp[temp.length - 1]
-    console.log(fileName)
     const result = await userAvatarService(tokenStore.token,data,type,fileName);
-    console.log(result)
     userStore.avatarUrl = result.data;
     emit('update-avatar', result)
     ElMessage.success('头像更新成功')

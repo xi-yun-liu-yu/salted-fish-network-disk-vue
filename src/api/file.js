@@ -16,3 +16,20 @@ export const fileDeleteService = (token,fileUUID) =>{
     };
     return  request.delete('/file/deleteFile/'+fileUUID, {headers} );
 }
+
+// 上传文件
+export const fileUpdateService = (token,nodeId,file,fileName) =>{
+    console.log(file);
+    var data = new FormData();
+    data.append('file', file);
+    console.log(data);
+    const headers = {
+        'Authorization': token,
+        'Content-Type': 'multipart/form-data'
+    };
+    return  request.post('/file/upload/'+nodeId + '/' + fileName, data,{headers},{
+
+    });
+}
+
+

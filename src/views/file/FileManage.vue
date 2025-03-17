@@ -20,7 +20,7 @@
     <!-- 操作工具栏 -->
     <div class="operation-bar">
       <el-button
-          v-if="currentPath.length > 1"
+          v-if="pathStore.path.length > 1"
           @click="goBack"
           :icon="Back"
           circle
@@ -76,7 +76,7 @@
       <el-table-column prop="type" label="类型" width="120" />
 
       <!-- 文件大小列 -->
-      <el-table-column prop="size" label="大小" width="120">
+      <el-table-column prop="size" label="大小" width="120"  >
         <template #default="{ row }" >
           <div v-if = "row.type === 'folder'">
             -
@@ -88,7 +88,11 @@
       </el-table-column>
 
       <!-- 修改时间列 -->
-      <el-table-column prop="modified" label="修改时间" width="180" />
+      <el-table-column prop="modified" label="修改时间" width="180">
+        <template #default="{ row }">
+          {{ formatDateTime(row.updatedAt) }}
+        </template>
+      </el-table-column>
 
       <!-- 操作列 -->
       <el-table-column label="操作" width="220" fixed="right">
@@ -128,7 +132,7 @@
 </template>
 
 <script setup>
-import {ref, computed, onMounted} from 'vue'
+import {ref, computed, onMounted,readonly} from 'vue'
 import {
   Folder,
   Picture,
@@ -143,16 +147,37 @@ import {
 } from '@element-plus/icons-vue'
 import {useUserInfoStore} from "@/stores/userInfo.js";
 import {useTokenStore} from "@/stores/token.js";
-import {fileDeleteService, fileNodeTreeService} from "@/api/file.js";
+import {fileDeleteService, fileNodeTreeService, fileUpdateService} from "@/api/file.js";
 import {ElMessage, ElMessageBox} from "element-plus";
+import {usePathStore} from "@/stores/path.js"
 const userInfoStore = useUserInfoStore();
 const tokenStore = useTokenStore();
+const pathStore = usePathStore();
 const files = ref([])
 
 onMounted(() => {
-  console.log('页面加载完成，发送初始化请求')
+  if (pathStore.path.length < 1) {
+    pathStore.setPath([userInfoStore.userId])
+  }
   renewal()
+  console.log(pathStore.path)
 })
+
+const formatDateTime = (timestamp) => {
+  if (!timestamp) return '-'
+  const date = new Date(timestamp)
+
+  // 使用国际API进行格式化，兼容性更好
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).format(date)
+}
 
 const emit = defineEmits(["delete-file"])
 
@@ -161,19 +186,11 @@ const renewal = async ()=>{
   JSON.parse(fileList.data).forEach((item) => {
     files.value.push(item);
   });
-
-  console.log(files.value)
 }
-
-
-// 路径管理
-const currentPath = ref([userInfoStore.userId]) // 初始路径为根目录
-
-
 // 获取当前目录文件
 const currentFiles = computed(() => {
   const currentFolder = files.value.find((file) => {
-    return  file.id === currentPath.value[currentPath.value.length - 1];
+    return  file.id === pathStore.path[pathStore.path.length - 1];
   })
   return currentFolder?.children
       ?.map(id => files.value.find(file => file.id === id))
@@ -183,15 +200,17 @@ const currentFiles = computed(() => {
 // 处理文件夹点击
 const handleFolderClick = (row) => {
   if (row.type === 'folder') {
-    currentPath.value.push(row.id)
+    pathStore.path.push(row.id)
   }
+  console.log(pathStore.path)
 }
 
 // 返回上一级
 const goBack = () => {
-  if (currentPath.value.length > 1) {
-    currentPath.value.pop()
+  if (pathStore.path.length > 1) {
+    pathStore.path.pop()
   }
+  console.log(pathStore.path)
 }
 
 // 过滤搜索
@@ -247,13 +266,6 @@ const handleDownload = (file) => {
   ElMessage.success(`下载文件：${file.name}`)
 }
 
-const handleDelete = async (file) => {
-  // 删除逻辑
-  await fileDeleteService(tokenStore.token,file.id);
-  emit('delete-file')
-  ElMessage.success(`已删除${file.name}`)
-}
-
 // 批量操作
 const handleBatchDelete = () => {
   // 批量删除逻辑
@@ -264,14 +276,16 @@ const handleBatchDownload = () => {
 }
 
 // 上传处理
-const uploadRef = ref(null)
-const handleUpload = () => {
+const uploadRef = ref([])
+const handleUpload = async () => {
   uploadRef.value.$el.querySelector('input').click()
-
 }
 
-const handleFileChange = (file) => {
+const handleFileChange = async (file) => {
   // 处理上传文件
+  console.log(file.name)
+  const result = await fileUpdateService(tokenStore.token,pathStore.path[pathStore.path.length - 1],file,file.name);
+
 }
 
 
@@ -305,7 +319,7 @@ const handleDeleteConfirm = (file) => {
 
 // 路径导航计算属性
 const breadcrumb = computed(() => {
-  const pathItems = currentPath.value.map(id => {
+  const pathItems = pathStore.path.map(id => {
     const file = files.value.find(f => f.id === id)
     return { id, name: file?.name || '未知路径' }
   })
@@ -322,9 +336,9 @@ const breadcrumb = computed(() => {
 
 // 路径导航点击
 const navigateTo = (id) => {
-  const index = currentPath.value.findIndex(pathId => pathId === id)
+  const index = pathStore.path.findIndex(pathId => pathId === id)
   if (index >= 0) {
-    currentPath.value = currentPath.value.slice(0, index + 1)
+    pathStore.path = pathStore.path.slice(0, index + 1)
   }
 }
 
@@ -333,6 +347,7 @@ const navigateTo = (id) => {
 </script>
 
 <style lang="scss" scoped>
+
 .path-navigation {
   margin-bottom: 20px;
   padding: 12px 20px;
