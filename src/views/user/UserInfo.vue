@@ -1,20 +1,25 @@
 <template>
+  <!-- 用户资料主容器 -->
   <div class="user-profile-container">
-    <!-- 头像上传区域 -->
+    <!-- 头像上传区域：点击触发文件选择 -->
     <div class="avatar-section" @click="triggerAvatarUpload">
       <transition name="scale" mode="out-in">
+        <!-- 头像展示状态 -->
         <div v-if="!uploading" class="avatar-wrapper">
           <el-avatar :size="120" :src="userStore.avatarUrl" class="hover-effect">
             <el-icon :size="40"><User /></el-icon>
           </el-avatar>
+          <!-- 上传蒙层提示 -->
           <div class="upload-mask">
             <el-icon :size="24"><Camera /></el-icon>
           </div>
+          <!-- 上传加载状态 -->
         </div>
         <div v-else class="upload-loading">
           <el-icon class="loading-icon" :size="40"><Loading /></el-icon>
         </div>
       </transition>
+      <!-- 隐藏的文件输入 -->
       <input
           ref="avatarInput"
           type="file"
@@ -23,8 +28,9 @@
           @change="handleAvatarChange"
       />
     </div>
-
+    <!-- 个人信息展示区域 -->
     <div class="info-section">
+      <!-- 昵称信息项 -->
       <div class="info-item animate-item">
         <el-icon class="info-icon"><User /></el-icon>
         <div class="info-content">
@@ -41,7 +47,7 @@
           修改
         </el-button>
       </div>
-
+      <!-- 邮箱信息项 -->
       <div class="info-item animate-item">
         <el-icon class="info-icon"><Message /></el-icon>
         <div class="info-content">
@@ -59,7 +65,7 @@
         </el-button>
       </div>
 
-      <!-- 存储空间 -->
+      <!-- 存储空间展示 -->
       <div class="storage-section animate-item">
         <div class="storage-header">
           <el-icon class="storage-icon"><Folder /></el-icon>
@@ -77,7 +83,7 @@
         />
       </div>
 
-
+      <!-- 编辑信息对话框 -->
       <el-dialog
           v-model="showEditDialog"
           :title="`修改${editType === 'nickname' ? '昵称' : '邮箱'}`"
@@ -136,6 +142,7 @@
           />
         </el-form-item>
       </el-form>
+      <!-- 修改密码对话框 -->
       <template #footer>
         <el-button @click="showPasswordDialog.step1 = false" style="margin-top: 0;margin-right: 12px">取消</el-button>
         <el-button
@@ -186,7 +193,7 @@
       </template>
     </el-dialog>
   </div>
-
+  <!-- 套餐升级对话框 -->
   <el-dialog
       v-model="showUpgradeDialog"
       title="升级存储空间"
@@ -355,6 +362,8 @@ const handleUpgradeStorage = () => {
   showUpgradeDialog.value = true
 }
 
+/* 套餐升级功能 */
+// 处理套餐升级
 const handleUpgrade = async () => {
   try {
     // 调用支付接口
@@ -428,11 +437,12 @@ const confirmEdit = async () => {
 
 const emit = defineEmits(['update-password', 'update-avatar'])
 
-// 存储空间计算
+/* 存储空间计算 */
+// 计算已用空间百分比
 const storagePercentage = computed(() => {
   return Math.round((userStore.usedStorage / userStore.storageLimit) * 100)
 })
-
+// 格式化存储空间显示
 const formatStorage = (bytes) => {
   const units = ['B', 'KB', 'MB', 'GB', 'TB']
   let unitIndex = 0
@@ -443,14 +453,14 @@ const formatStorage = (bytes) => {
   return `${bytes.toFixed(1)} ${units[unitIndex]}`
 }
 
-// 头像上传处理
+
 const avatarInput = ref(null)
 const uploading = ref(false)
 
 const triggerAvatarUpload = () => {
   avatarInput.value.click()
 }
-
+/* 头像上传处理 */
 const handleAvatarChange = async (event) => {
   const file = event.target.files[0]
   console.log(event)
@@ -532,6 +542,8 @@ const handleChangePassword = () => {
   showPasswordDialog.step1 = true
 }
 
+/* 密码修改流程 */
+// 验证原密码
 const verifyOldPassword = async () => {
   if (!passwordForm.value.oldPassword) {
     ElMessage.warning('请输入原密码')
@@ -579,6 +591,7 @@ const updatePassword = async () => {
 .el-scrollbar {
   height: 85%;
 }
+
 .upgrade-container {
   display: grid;
   grid-template-columns: 1fr 1.5fr;
@@ -710,13 +723,13 @@ const updatePassword = async () => {
   }
 }
 
-// 入场动画
+/* 升级套餐对话框动画 */
 .vip-dialog {
   :deep(.el-dialog) {
     animation: dialogEnter 0.4s ease;
   }
 }
-
+/* 关键帧动画 */
 @keyframes dialogEnter {
   from {
     transform: translateY(20px);
@@ -766,7 +779,7 @@ const updatePassword = async () => {
   }
 }
 
-
+/* 用户资料主容器样式 */
 .user-profile-container {
   padding: 32px;
   background: white;
@@ -775,13 +788,13 @@ const updatePassword = async () => {
   max-width: 480px;
   margin: 0 auto;
 }
-
+/* 头像区域样式 */
 .avatar-section {
   position: relative;
   margin-bottom: 32px;
   display: flex;
   justify-content: center;
-
+  /* 头像悬停效果 */
   .avatar-wrapper {
     position: relative;
     cursor: pointer;
@@ -792,7 +805,7 @@ const updatePassword = async () => {
       animation: floating 3s ease-in-out infinite;
 
       .upload-mask {
-        opacity: 1;
+        opacity: 1; // 显示上传蒙层
       }
     }
   }
@@ -815,7 +828,7 @@ const updatePassword = async () => {
       color: white;
     }
   }
-
+  /* 上传加载动画 */
   .upload-loading {
     display: flex;
     align-items: center;
@@ -835,7 +848,7 @@ const updatePassword = async () => {
 
 .info-section {
   margin-bottom: 24px;
-
+  /* 信息项通用样式 */
   .info-item {
     display: flex;
     align-items: center;
@@ -844,7 +857,7 @@ const updatePassword = async () => {
     background: #f8f9fe;
     border-radius: 12px;
     transition: all 0.3s ease;
-
+    /* 悬停效果 */
     &:hover {
       transform: translateX(8px);
       box-shadow: 0 4px 12px rgba(64, 158, 255, 0.1);
@@ -872,7 +885,7 @@ const updatePassword = async () => {
     }
   }
 }
-
+/* 存储空间进度条样式 */
 .storage-section {
   padding: 16px;
   background: #f8f9fe;
@@ -905,7 +918,7 @@ const updatePassword = async () => {
     }
   }
 }
-
+/* 操作按钮组样式 */
 .action-button {
   width: 100%;
   padding: 12px;
@@ -913,15 +926,15 @@ const updatePassword = async () => {
   transition: all 0.3s ease;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+    transform: translateY(-2px);// 上浮效果
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);// 动态阴影
   }
 
   &:active {
     transform: translateY(1px);
   }
 }
-
+/* 关键帧动画 */
 @keyframes floating {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
@@ -975,7 +988,7 @@ const updatePassword = async () => {
   }
 }
 
-// 对话框自定义样式
+/*对话框自定义样式*/
 :deep(.el-dialog) {
   border-radius: 12px;
 

@@ -1,4 +1,7 @@
 <script setup>
+
+/* 主布局组件 - 包含导航菜单、用户操作和内容区域 */
+
 import {
   Management,
   Promotion,
@@ -20,13 +23,12 @@ import {useDownLoadPathStore} from "@/stores/downLoadPath.js";
 
 const router = useRouter()
 
-const showSettings = ref(false)
-const showLinkDownload = ref(false)
-const editMode = ref(false)
-const defaultPath = ref('/Users/Downloads') // 默认下载路径
-const tempPath = ref('')
-const shareLink = ref('')
-const downloadPath = ref('')
+const showSettings = ref(false)      // 下载设置对话框
+const showLinkDownload = ref(false)  // 链接下载对话框
+const editMode = ref(false)          // 路径编辑模式
+const shareLink = ref('')            // 分享链接输入
+const downloadPath = ref('')         // 下载路径输入
+
 
 const userStore = useUserInfoStore();
 const activeStore = useActiveStore();
@@ -34,11 +36,14 @@ const tokenStore = useTokenStore();
 const pathStore = usePathStore();
 const downLoadPathStore = useDownLoadPathStore();
 
+/* 设置当前激活菜单项 */
 const setActive = (index) =>{
   activeStore.setActive(index);
 }
 
+/* 处理用户退出登录 */
 const exit = async () =>{
+  // 清除所有用户相关状态
   userStore.removeUserInfo();
   activeStore.removeActive();
   tokenStore.removeToken();
@@ -48,16 +53,15 @@ const exit = async () =>{
 
 }
 
+/* 切换路径编辑模式 */
 const toggleEdit = () => {
   editMode.value = !editMode.value
 }
 
+/* 处理链接下载操作 */
 const handleDownload = () => {
-  // 这里添加下载逻辑
-  // let url = shareLink.value
   const link = document.createElement('a')
   link.href = shareLink.value.slice(0, -4)
-  // link.download = file.name // 设置下载文件名
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
@@ -68,17 +72,20 @@ const handleDownload = () => {
 </script>
 
 <template>
+  <!-- 主布局容器 -->
   <el-container class="layout-container">
-    <!-- 左侧菜单 -->
+    <!-- 左侧导航菜单 -->
     <el-aside width="250px" style="background-color: #409EFF">
       <div class="el-aside__logo"></div>
       <el-menu :default-active = activeStore.active active-text-color="#ffd04b" background-color="#409EFF"  text-color="#fff" router>
+        <!-- 文件管理菜单 -->
         <el-menu-item index = "/main/file/FileManage" name="fileManage" @click = "setActive('/main/file/FileManage')">
           <el-icon>
             <Management />
           </el-icon>
           <span>我的文件</span>
         </el-menu-item>
+        <!-- 传输管理子菜单 -->
         <el-sub-menu index="1">
           <template #title>
             <el-icon>
@@ -99,7 +106,7 @@ const handleDownload = () => {
             <span>下载文件</span>
           </el-menu-item>
         </el-sub-menu>
-
+        <!-- 个人中心菜单 -->
         <el-menu-item index = "/main/user/UserInfo" name="userInfo" @click = "setActive('/main/user/UserInfo')">
           <el-icon>
             <UserFilled />
@@ -135,12 +142,12 @@ const handleDownload = () => {
 <!--        </el-sub-menu>-->
       </el-menu>
     </el-aside>
-    <!-- 右侧主区域 -->
+    <!-- 右侧内容区域 -->
     <el-container>
       <!-- 头部区域 -->
       <el-header >
         <div style="font-family: 微软雅黑;font-size :30px">{{userStore.nickname}}的资源空间</div>
-
+        <!-- 用户操作下拉菜单 -->
         <el-dropdown placement="bottom-end">
                     <span class="el-dropdown__box">
                         <el-avatar :src="userStore.avatarUrl" />
@@ -158,7 +165,7 @@ const handleDownload = () => {
           </template>
         </el-dropdown>
       </el-header>
-      <!-- 中间区域 -->
+      <!-- 主体内容区域 -->
       <el-main>
         <router-view>
         </router-view>
@@ -168,7 +175,7 @@ const handleDownload = () => {
     </el-container>
   </el-container>
 
-
+  <!-- 下载设置对话框 -->
   <el-dialog
       v-model="showSettings"
       title="下载设置"
@@ -198,7 +205,7 @@ const handleDownload = () => {
     </template>
   </el-dialog>
 
-  <!-- 链接下载弹窗 -->
+  <!-- 链接下载对话框 -->
   <el-dialog
       v-model="showLinkDownload"
       title="链接下载"
@@ -240,10 +247,11 @@ const handleDownload = () => {
 
 <style lang="scss" scoped>
 
+/* 对话框统一样式 */
 .custom-dialog {
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-
+  /* 对话框头部样式 */
   :deep(.el-dialog__header) {
     border-bottom: 1px solid #eee;
     margin-right: 0;
@@ -277,7 +285,7 @@ const handleDownload = () => {
   margin-bottom: 1rem;
 }
 
-// 按钮动画
+/* 按钮通用动画 */
 .el-button {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -292,11 +300,11 @@ const handleDownload = () => {
   }
 }
 
-//
 
+/* 主布局样式 */
 .layout-container {
   height: 100vh;
-
+  /* 左侧菜单样式 */
   .el-aside {
     // 左侧菜单容器边框
     border-right: 1px solid #e8e8e8;
@@ -307,7 +315,7 @@ const handleDownload = () => {
       height: 120px;
       background: url('@/assets/logo.png') no-repeat center / 120px auto;
     }
-
+    /* 菜单项交互效果 */
     .el-menu {
       border-right: none;
       :deep(.el-menu-item:not(:last-child)) {
@@ -329,7 +337,7 @@ const handleDownload = () => {
         margin: 6px 12px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-        // 左侧指示条
+        /* 激活状态指示条 */
         &::before {
           content: '';
           position: absolute;
@@ -357,12 +365,13 @@ const handleDownload = () => {
           background: rgba(64, 158, 255, 0.05) !important;
 
           &::before {
-            opacity: 1;
+            opacity: 1;// 显示激活指示条
           }
         }
       }
     }
 
+    /* 头部区域样式 */
     .el-header {
       // 头部容器边框
       border-radius: 0 0 12px 12px;
@@ -386,6 +395,7 @@ const handleDownload = () => {
         );
       }
 
+      /* 用户下拉菜单样式 */
       .el-dropdown__box {
         border: 2px solid #f0f0f0;
         border-radius: 24px;
@@ -395,7 +405,7 @@ const handleDownload = () => {
 
         &:hover {
           border-color: #c0e1ff;
-          box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+          box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);// 悬停发光效果
         }
       }
     }
@@ -436,7 +446,7 @@ const handleDownload = () => {
       }
     }
   }
-
+  /* 页脚样式 */
   .el-footer {
     display: flex;
     align-items: center;
@@ -446,105 +456,16 @@ const handleDownload = () => {
     --el-footer-height: 40px;
     //flex: 2;
   }
-
+  /* 主体内容区域 */
   .el-main{
-    //overflow-x: auto;  /* 关键样式 */
-    //border: 1px solid #ebeef5;
-    //border-radius: 8px;
     padding: 24px;
 
-    /* 隐藏原生滚动条（可选） */
-    scrollbar-width: none; /* Firefox */
+    /* 隐藏原生滚动条 */
+    scrollbar-width: none;
     &::-webkit-scrollbar {
-      display: none; /* Chrome/Safari */
+      display: none;
     }
   }
 
-  //.el-main {
-  //  padding: 24px 24px 10px;
-  //  --el-main-padding: 14px;
-  //  height: calc(100vh - 114px); // 根据实际header/footer高度调整
-  //  display: flex;
-  //  justify-content: center;
-  //
-  //
-  //  div[style*="border: 1px solid red"] {
-  //    border: none !important;
-  //    width: 95%;
-  //    height: 93%;
-  //
-  //    /* 新增弹性布局 */
-  //    display: flex;
-  //    flex-direction: column;
-  //    min-height: 0; // 防止内容溢出
-  //
-  //    background: linear-gradient(145deg, #ffffff, #f8fafc);
-  //    border-radius: 16px;
-  //    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  //    padding: 24px;
-  //    position: relative;
-  //    overflow: hidden; // 防止内容溢出
-  //
-  //    /* 标题样式适配 */
-  //    > span {
-  //      flex: 0 0 auto;
-  //      position: relative;
-  //      font-size: clamp(16px, 1.8vw, 20px); // 响应式字体
-  //      color: #303133;
-  //      font-weight: 600;
-  //      margin-bottom: 1.5rem;
-  //
-  //      &::after {
-  //        content: "";
-  //        width: 40px;
-  //        height: 3px;
-  //        background: #409EFF;
-  //        display: block;
-  //        margin-top: 8px;
-  //      }
-  //    }
-  //
-  //    /* 内容区域 */
-  //    //&::after {
-  //    //  content: "内容展示区";
-  //    //  position: absolute;
-  //    //  top: 50%;
-  //    //  left: 50%;
-  //    //  transform: translate(-50%, -50%);
-  //    //  font-size: min(5vw, 48px); // 响应式字号
-  //    //  font-weight: 600;
-  //    //  color: rgba(64, 158, 255, 0.08);
-  //    //  white-space: nowrap;
-  //    //  pointer-events: none;
-  //    //}
-  //
-  //    /* 弹性内容容器 */
-  //    > div {
-  //      flex: 1;
-  //      min-height: 0; // 修复Safari的flex溢出问题
-  //      position: relative;
-  //      display: flex;
-  //      justify-content: center;
-  //      align-items: center;
-  //    }
-  //
-  //    /* 响应式处理 */
-  //    @media (max-width: 768px) {
-  //      padding: 16px;
-  //      > span {
-  //        font-size: 16px;
-  //      }
-  //      &::after {
-  //        font-size: 24px;
-  //      }
-  //    }
-  //
-  //    /* 保持悬停动画 */
-  //    transition: transform 0.3s ease;
-  //    &:hover {
-  //      transform: translateY(-2px);
-  //    }
-  //  }
-  //}
 }
 </style>

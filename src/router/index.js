@@ -8,9 +8,7 @@ import LayoutVue from '@/views/Layout.vue'
 import FileUploadVue from '@/views/file/FileUpload.vue'
 import FileDownloadVue from '@/views/file/FileDownload.vue'
 import FileManageVue from '@/views/file/FileManage.vue'
-import UserAvatarVue from '@/views/user/UserAvatar.vue'
 import UserInfoVue from '@/views/user/UserInfo.vue'
-import UserResetPasswordVue from '@/views/user/UserResetPassword.vue'
 
 
 const routes = [
@@ -21,9 +19,7 @@ const routes = [
             {path: '/main/file/FileUpload',component: FileUploadVue},
             {path: '/main/file/FileDownload',component: FileDownloadVue},
             {path: '/main/file/FileManage',component: FileManageVue},
-            {path: '/main/user/UserAvatar',component: UserAvatarVue},
             {path: '/main/user/UserInfo',component: UserInfoVue},
-            {path: '/main/user/UserResetPassword',component: UserResetPasswordVue},
         ]},
 
 ]

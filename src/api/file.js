@@ -175,7 +175,7 @@ export const hasFolder = (token,folder) =>{
         headers: headers
     })
 }
-
+//创建文件夹
 export const createFolder = (token,folderName,nodeId) =>{
     const headers = {
         'Authorization': token,
