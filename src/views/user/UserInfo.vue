@@ -453,6 +453,8 @@ const triggerAvatarUpload = () => {
 
 const handleAvatarChange = async (event) => {
   const file = event.target.files[0]
+  console.log(event)
+  console.log(file)
   if (!file.type.startsWith('image/')) {
     ElMessage.error('请选择图片文件')
     return

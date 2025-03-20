@@ -28,6 +28,10 @@
       <el-button type="primary" :icon="UploadFilled" @click="handleUpload">
         上传文件
       </el-button>
+      <el-button type="primary" :icon="FolderAdd" @click="addFolder">
+        新键文件夹
+      </el-button>
+
       <el-input
           v-model="searchQuery"
           placeholder="搜索文件"
@@ -97,8 +101,8 @@
       <!-- 操作列 -->
       <el-table-column label="操作" width="220" fixed="right">
         <template #default="{ row }">
-          <el-button type="primary" :icon="Share" circle @click="handleShare(row)" />
-          <el-button type="success" :icon="Download" circle @click="handleDownload(row)" />
+          <el-button v-if="row.type !== 'folder'" type="primary" :icon="Share" circle @click="handleShare(row)" />
+          <el-button v-if="row.type !== 'folder'" type="success" :icon="Download" circle @click="handleDownload(row)" />
           <el-button
               type="danger"
               :icon="Delete"
@@ -107,13 +111,24 @@
           />
         </template>
       </el-table-column>
+      <template #empty>
+        <el-empty
+            description="暂无文件"
+            image-size="120"
+            class="custom-empty"
+        >
+          <template #image>
+            <el-icon :size="60" color="#67C23A"><FolderOpened/></el-icon>
+          </template>
+        </el-empty>
+      </template>
     </el-table>
 
     <!-- 批量操作栏 -->
     <div v-if="selectedFiles.length > 0" class="batch-operation-bar">
       <span>已选择 {{ selectedFiles.length }} 个文件</span>
       <el-button type="danger" :icon="Delete" @click="handleBatchDelete">批量删除</el-button>
-      <el-button type="success" :icon="Download" @click="handleBatchDownload">批量下载</el-button>
+<!--      <el-button type="success" :icon="Download" @click="handleBatchDownload">批量下载</el-button>-->
     </div>
 
     <!-- 上传组件 -->
@@ -129,27 +144,67 @@
       </template>
     </el-upload>
   </div>
+
+  <el-dialog
+      v-model="showDialog"
+      title="新建文件夹"
+      width="400px"
+      align-center
+      @closed="resetForm"
+  >
+    <el-form :model="folderForm" label-width="80px">
+      <el-form-item label="名称" required>
+        <el-input
+            v-model="folderForm.name"
+            placeholder="请输入文件夹名称"
+            clearable
+            maxlength="50"
+            show-word-limit
+        />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <el-button @click="showDialog = false">取消</el-button>
+      <el-button
+          type="primary"
+          :disabled="!folderForm.name"
+          @click="confirmCreateFolder"
+      >
+        确定
+      </el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
-import {ref, computed, onMounted,readonly} from 'vue'
+import {computed, onMounted, reactive, ref} from 'vue'
 import {
-  Folder,
-  Picture,
-  Document,
-  VideoPlay,
-  Download,
+  ArrowLeftBold as Back,
   Delete,
+  Document,
+  Download,
+  Folder,
+  FolderAdd,
+  FolderOpened,
+  Picture,
+  Search,
   Share,
   UploadFilled,
-  Search,
-  ArrowLeftBold as Back
+  VideoPlay
 } from '@element-plus/icons-vue'
 import {useUserInfoStore} from "@/stores/userInfo.js";
 import {useTokenStore} from "@/stores/token.js";
-import {fileDeleteService, fileNodeTreeService, fileUpdateService} from "@/api/file.js";
+import {createFolder, deleteFolder, fileDeleteService, fileNodeTreeService, fileUpdateService} from "@/api/file.js";
 import {ElMessage, ElMessageBox} from "element-plus";
 import {usePathStore} from "@/stores/path.js"
+import router from "@/router/index.js";
+import {useActiveStore} from "@/stores/active.js";
+import {useUploadListStore} from "@/stores/uploadList.js";
+import {v4 as uuidv4} from 'https://cdn.skypack.dev/uuid';
+import {useDownListStore} from "@/stores/downList.js";
+import openFile from "@/utils/openFile.js";
+
 const userInfoStore = useUserInfoStore();
 const tokenStore = useTokenStore();
 const pathStore = usePathStore();
@@ -162,6 +217,13 @@ onMounted(() => {
   renewal()
   console.log(pathStore.path)
 })
+
+const componentKey = ref(0);
+
+// 重新加载组件的方法
+const reloadComponent = () => {
+  componentKey.value++;
+};
 
 const formatDateTime = (timestamp) => {
   if (!timestamp) return '-'
@@ -179,7 +241,7 @@ const formatDateTime = (timestamp) => {
   }).format(date)
 }
 
-const emit = defineEmits(["delete-file"])
+// const emit = defineEmits(["delete-file"])
 
 const renewal = async ()=>{
   const fileList = await fileNodeTreeService(tokenStore.token);
@@ -188,19 +250,19 @@ const renewal = async ()=>{
   });
 }
 // 获取当前目录文件
-const currentFiles = computed(() => {
+const currentFiles = ref(computed(() => {
   const currentFolder = files.value.find((file) => {
     return  file.id === pathStore.path[pathStore.path.length - 1];
   })
   return currentFolder?.children
       ?.map(id => files.value.find(file => file.id === id))
       ?.filter(Boolean) || []
-})
+}))
 
 // 处理文件夹点击
 const handleFolderClick = (row) => {
   if (row.type === 'folder') {
-    pathStore.path.push(row.id)
+    pathStore.pushPath(row.id)
   }
   console.log(pathStore.path)
 }
@@ -208,20 +270,20 @@ const handleFolderClick = (row) => {
 // 返回上一级
 const goBack = () => {
   if (pathStore.path.length > 1) {
-    pathStore.path.pop()
+    pathStore.popPath();
   }
   console.log(pathStore.path)
 }
 
 // 过滤搜索
 const searchQuery = ref('')
-const filteredFiles = computed(() => {
+const filteredFiles = ref(computed(() => {
   if (!searchQuery.value) return currentFiles.value
   const query = searchQuery.value.toLowerCase()
   return currentFiles.value.filter(file =>
       file.name.toLowerCase().includes(query)
   )
-})
+}))
 
 // 文件图标映射
 const fileIcons = {
@@ -259,11 +321,41 @@ const handleSelectionChange = (selection) => {
 
 // 文件操作处理
 const handleShare = (file) => {
-  ElMessage.success(`分享文件：${file.name}`)
+  openFile.handleOpenFolder(file.url + 'sfnd')
+  // ElMessage.success(`已复制链接`)
 }
+const downListStore = useDownListStore()
+const handleDownload = async (file) => {
 
-const handleDownload = (file) => {
-  ElMessage.success(`下载文件：${file.name}`)
+  // if (!downLoadPathStore.downLoadPath){
+  //   alert({
+  //     title: '未设定下载地址',
+  //     message: '请点击右上角头像，在设置中添加下载地址'
+  //   })
+  //   return
+  // }
+  // await router.push('/main/file/FileDownload');
+  // const activeStore = useActiveStore();
+  // activeStore.setActive('/main/file/FileDownload');
+  // console.log(downLoadPathStore.downLoadPath+file.name)
+  // const result = await fileDownService(tokenStore.token,file.id,downLoadPathStore.downLoadPath,file.name)
+  // console.log(result)
+  // if (result.code === 0) {
+  //   ElMessage.success(`下载文件：${file.name}`)
+  // }
+
+  console.log(file)
+  const link = document.createElement('a')
+  link.href = file.url
+  link.download = file.name // 设置下载文件名
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  downListStore.pushDownFinishList({
+    fileName: file.name,
+    finishData: new Date().toLocaleString(),
+    fileSize: formatFileSize(file.size),
+  })
 }
 
 // 批量操作
@@ -271,9 +363,9 @@ const handleBatchDelete = () => {
   // 批量删除逻辑
 }
 
-const handleBatchDownload = () => {
-  // 批量下载逻辑
-}
+// const handleBatchDownload = () => {
+//   // 批量下载逻辑
+// }
 
 // 上传处理
 const uploadRef = ref([])
@@ -283,11 +375,21 @@ const handleUpload = async () => {
 
 const handleFileChange = async (file) => {
   // 处理上传文件
-  console.log(file.name)
-  const result = await fileUpdateService(tokenStore.token,pathStore.path[pathStore.path.length - 1],file,file.name);
-
+  var data = new FormData();
+  data.append('file', file.raw);
+  await router.push('/main/file/FileUpload');
+  const activeStore = useActiveStore();
+  activeStore.setActive('/main/file/FileUpload');
+  const uuid = uuidv4();
+  const result = await fileUpdateService(tokenStore.token,pathStore.path[pathStore.path.length - 1],data,file.name,uuid);
+  const uploadListStore = useUploadListStore()
+  const temp = []
+  pathStore.path.forEach((element) => {
+    temp.push(element);
+  });
+  temp.push(result.data)
+  uploadListStore.getFinishList(uuid).path = temp
 }
-
 
 const handleDeleteConfirm = (file) => {
   ElMessageBox.confirm(
@@ -302,19 +404,29 @@ const handleDeleteConfirm = (file) => {
         cancelButtonClass: 'cancel-delete-btn'
       }
   ).then(async () => {
-    await fileDeleteService(tokenStore.token, file.id)
+    if (file.type === 'folder') {
+      await deleteFolder(tokenStore.token, file.id)
+    }else {
+      await fileDeleteService(tokenStore.token, file.id)
+      const uploadListStore = useUploadListStore()
+      if (uploadListStore.hasFinishList(file.id.match(/^[^.]+/)[0])) {
+        uploadListStore.deleteUploadList(file.id.match(/^[^.]+/)[0])
+      }
+    }
+
 
     // 更新文件列表（两种方式任选其一）
     // 方式一：直接过滤删除项（更高效）
     files.value = files.value.filter(f => f.id !== file.id)
-
-    // 方式二：重新获取最新数据（更可靠）
-    // await renewal()
+    await renewal()
+    // // 方式二：重新获取最新数据（更可靠）
 
     ElMessage.success(`已删除 ${file.name}`)
   }).catch(() => {
     ElMessage.info('已取消删除')
   })
+
+  reloadComponent()
 }
 
 // 路径导航计算属性
@@ -342,11 +454,68 @@ const navigateTo = (id) => {
   }
 }
 
+const showDialog = ref(false);
+const folderForm = reactive({
+  name: ''
+});
 
+// 新增方法
+const addFolder = () => {
+  showDialog.value = true;
+};
+
+const resetForm = () => {
+  folderForm.name = '';
+};
+
+const confirmCreateFolder = async () => {
+  try {
+    console.log(folderForm.name)
+    console.log(pathStore.path[pathStore.path.length - 1])
+    // 调用创建文件夹API（假设存在createFolderService）
+    const result = await createFolder(
+        tokenStore.token,
+        folderForm.name,
+        pathStore.path[pathStore.path.length - 1]
+    );
+    ElMessage.success('文件夹创建成功');
+    // 立即添加新文件夹到本地数据
+
+    files.value.push({
+      id: result.data,
+      name: folderForm.name,
+      type: 'folder',
+      children: [],
+      updatedAt: new Date().toISOString()
+    });
+    //更新页面显示（很诡异的写法，不知为何这里响应式数据没有生效，测试了很多方法，这是第一个可行方案）
+    await router.push('/main/file/FileUpload');
+    await router.push('/main/file/FileManage');
+
+    showDialog.value = false;
+    await renewal(); // 刷新文件列表
+  } catch (error) {
+    ElMessage.error(`创建失败: ${error.message}`);
+  }
+};
 
 </script>
 
 <style lang="scss" scoped>
+
+:deep(.el-dialog__body) {
+  padding: 20px 25px;
+}
+
+:deep(.el-form-item__label) {
+  padding-right: 15px;
+}
+
+.el-input {
+  width: 100%;
+}
+
+//
 
 .path-navigation {
   margin-bottom: 20px;

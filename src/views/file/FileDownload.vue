@@ -1,66 +1,76 @@
 <script setup>
-import {Document, Download, UploadFilled, VideoPause, CircleClose, Platform} from '@element-plus/icons-vue'
+import {Document, Download, VideoPause, CircleClose, Platform, CircleCheck} from '@element-plus/icons-vue'
 import openFile from '@/utils/openFile.js'
+import {useDownListStore} from "@/stores/downList.js";
+const downListStore = useDownListStore();
+
+const deleteFinish = async (fileName) => {
+  downListStore.removeDownList()
+  downListStore.removeDownFinishList()
+  downListStore.deleteDownFinishList(fileName)
+  console.log(downListStore.downFinishList)
+}
+
 </script>
 
 <template>
   <div class="transfer-container">
     <el-tabs class="custom-tabs" v-model="activeTab" @tab-click="handleTabClick">
-      <el-tab-pane name="upload">
-        <template #label>
-          <span class="custom-tab-label">
-            <el-icon><Download /></el-icon>
-            下载列表
-          </span>
-        </template>
-        <div class="transfer-section">
-          <el-table :data="uploadList" style="width: 100%" height="70vh">
-            <el-table-column prop="fileName" label="文件名" width="500" >
-              <template #default="{ row }">
-                <el-icon class="file-icon">
-                  <Document />
-                </el-icon>
-                {{ row.fileName }}
-              </template>
-            </el-table-column>
-            <el-table-column label="进度" width="300">
-              <template #default="{ row }">
-                <el-progress
-                    :percentage="row.progress"
-                    :color="customColors"
-                    :stroke-width="16"
-                    striped
-                />
-              </template>
-            </el-table-column>
-            <el-table-column prop="speed" label="速度" width="200" />
-            <el-table-column label="状态" width="150" >
-              <template #default="{ row }">
-                <el-tag :type="statusType[row.status]">
-                  {{ row.status }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="150" >
-              <template #default="{ row }">
-                <el-button
-                    v-if="row.status === '传输中'"
-                    :icon="VideoPause"
-                    type="warning"
-                    circle
-                    size="small"
-                />
-                <el-button
-                    :icon="CircleClose"
-                    type="danger"
-                    circle
-                    size="small"
-                />
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-      </el-tab-pane>
+<!--      <el-tab-pane name="upload">-->
+<!--        <template #label>-->
+<!--          <span class="custom-tab-label">-->
+<!--            <el-icon><Download /></el-icon>-->
+<!--            下载列表-->
+<!--          </span>-->
+<!--        </template>-->
+<!--        <div class="transfer-section">-->
+<!--          <el-table :data="downListStore.downList" style="width: 100%" height="70vh">-->
+<!--            <el-table-column prop="fileName" label="文件名" width="500" >-->
+<!--              <template #default="{ row }">-->
+<!--                <el-icon class="file-icon">-->
+<!--                  <Document />-->
+<!--                </el-icon>-->
+<!--                {{ row.fileName }}-->
+<!--              </template>-->
+<!--            </el-table-column>-->
+<!--            <el-table-column label="进度" width="300">-->
+<!--              <template #default="{ row }">-->
+<!--                <el-progress-->
+<!--                    :percentage="row.progress"-->
+<!--                    :color="customColors"-->
+<!--                    :stroke-width="16"-->
+<!--                    striped-->
+<!--                />-->
+<!--              </template>-->
+<!--            </el-table-column>-->
+<!--            <el-table-column prop="speed" label="速度" width="200" />-->
+<!--            <el-table-column label="状态" width="150" >-->
+<!--              <template #default="{ row }">-->
+<!--                <el-tag :type="statusType[row.status]">-->
+<!--                  {{ row.status }}-->
+<!--                </el-tag>-->
+<!--              </template>-->
+<!--            </el-table-column>-->
+<!--            <el-table-column label="操作" width="150" >-->
+<!--              <template #default="{ row }">-->
+<!--                <el-button-->
+<!--                    v-if="row.status === '传输中'"-->
+<!--                    :icon="VideoPause"-->
+<!--                    type="warning"-->
+<!--                    circle-->
+<!--                    size="small"-->
+<!--                />-->
+<!--                <el-button-->
+<!--                    :icon="CircleClose"-->
+<!--                    type="danger"-->
+<!--                    circle-->
+<!--                    size="small"-->
+<!--                />-->
+<!--              </template>-->
+<!--            </el-table-column>-->
+<!--          </el-table>-->
+<!--        </div>-->
+<!--      </el-tab-pane>-->
 
       <el-tab-pane name="download">
         <template #label>
@@ -70,7 +80,7 @@ import openFile from '@/utils/openFile.js'
           </span>
         </template>
         <div class="transfer-section">
-          <el-table :data="finishList" style="width: 100%" height="70vh">
+          <el-table :data="downListStore.downFinishList" style="width: 100%" height="70vh">
             <el-table-column prop="fileName" label="文件名" width="500" >
               <template #default="{ row }">
                 <el-icon class="file-icon">
@@ -82,14 +92,14 @@ import openFile from '@/utils/openFile.js'
             <el-table-column prop="finishData" label="下载日期" width="300"/>
 
             <el-table-column prop="fileSize" label="文件大小" width="200" />
-            <el-table-column label="本地打开" width="150" >
-              <template #default="{ row }">
-                <el-button size="small" @click = openFile.handleOpenFolder(row.filePath)>
-                  复制地址
-                </el-button>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="150" >
+<!--            <el-table-column label="本地打开" width="150" >-->
+<!--              <template #default="{ row }">-->
+<!--                <el-button size="small" @click = openFile.handleOpenFolder(row.filePath)>-->
+<!--                  复制地址-->
+<!--                </el-button>-->
+<!--              </template>-->
+<!--            </el-table-column>-->
+            <el-table-column label="删除记录" width="150" >
               <template #default="{ row }">
                 <el-button
                     v-if="row.status === '传输中'"
@@ -103,9 +113,21 @@ import openFile from '@/utils/openFile.js'
                     type="danger"
                     circle
                     size="small"
+                    @click = deleteFinish(row.fileName)
                 />
               </template>
             </el-table-column>
+            <template #empty>
+              <el-empty
+                  description="暂无已完成下载"
+                  image-size="120"
+                  class="custom-empty"
+              >
+                <template #image>
+                  <el-icon :size="60" color="#67C23A"><CircleClose /></el-icon>
+                </template>
+              </el-empty>
+            </template>
           </el-table>
         </div>
       </el-tab-pane>
@@ -117,7 +139,7 @@ import openFile from '@/utils/openFile.js'
 export default {
   data() {
     return {
-      activeTab: 'upload',
+      activeTab: 'download',
       customColors: [
         { color: '#409EFF', percentage: 100 },
       ],
@@ -126,25 +148,7 @@ export default {
         '已完成': 'success',
         '已暂停': 'warning',
         '失败': 'danger'
-      },
-      uploadList: [
-        {
-          fileName: '项目文档.pdf',
-          progress: 65,
-          speed: '1.2MB/s',
-          status: '传输中'
-        },
-        // 更多模拟数据...
-      ],
-      finishList: [
-        {
-          fileName: '设计素材.zip',
-          finishData: '2025/3/8',
-          fileSize: '100KB',
-          filePath: 'S:\\'
-        },
-        // 更多模拟数据...
-      ]
+      }
     }
   },
   methods: {

@@ -61,6 +61,8 @@ import {useRouter}  from "vue-router";
 import {useTokenStore} from "@/stores/token.js";
 import {useUserInfoStore} from "@/stores/userInfo.js";
 import {useActiveStore} from "@/stores/active.js";
+import {usePathStore} from "@/stores/path.js";
+const pathStore = usePathStore();
 const activeStore = useActiveStore();
 
 const router = useRouter()
@@ -82,8 +84,8 @@ const Login = async ()=>{
     const userInfoStore = useUserInfoStore();
     userInfoStore.setUserInfo(result.data);
     activeStore.setActive('/main/file/FileManage');
-    //去首页
     localStorage.setItem('isLoggedIn', 'true');
+    pathStore.setPath([userInfoStore.userId])
     await router.push('/main');
   }else {
     ElMessage({

@@ -13,7 +13,9 @@ instance.interceptors.response.use(
         return result.data;
     },
     err=>{
-
+        if (axios.isCancel(err)) {
+            return Promise.reject('请求被取消');
+        }
         const status = err.response? err.response.status : null;
         // 超出 2xx 范围的状态码都会触发该函数。
         // 对响应错误做点什么
@@ -37,7 +39,9 @@ instance.interceptors.response.use(
         return Promise.reject(err);
     }
 )
-
+export function createCancelTokenSource() {
+    return axios.CancelToken.source();
+}
 
 
 export default instance;

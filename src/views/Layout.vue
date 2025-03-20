@@ -4,21 +4,35 @@ import {
   Promotion,
   UserFilled,
   User,
+  Setting,
+  Paperclip,
   SwitchButton,
+  Edit, Check,
   CaretBottom, UploadFilled, Download
 } from '@element-plus/icons-vue'
-
+import { ref } from 'vue'
 import {useActiveStore} from '@/stores/active.js'
 import {useUserInfoStore} from "@/stores/userInfo.js";
 import {useTokenStore} from "@/stores/token.js";
 import {usePathStore} from "@/stores/path.js"
 import {useRouter}  from "vue-router";
+import {useDownLoadPathStore} from "@/stores/downLoadPath.js";
+
 const router = useRouter()
+
+const showSettings = ref(false)
+const showLinkDownload = ref(false)
+const editMode = ref(false)
+const defaultPath = ref('/Users/Downloads') // 默认下载路径
+const tempPath = ref('')
+const shareLink = ref('')
+const downloadPath = ref('')
 
 const userStore = useUserInfoStore();
 const activeStore = useActiveStore();
 const tokenStore = useTokenStore();
 const pathStore = usePathStore();
+const downLoadPathStore = useDownLoadPathStore();
 
 const setActive = (index) =>{
   activeStore.setActive(index);
@@ -32,6 +46,24 @@ const exit = async () =>{
   localStorage.setItem('isLoggedIn', 'false');
   await router.replace("/");
 
+}
+
+const toggleEdit = () => {
+  editMode.value = !editMode.value
+}
+
+const handleDownload = () => {
+  // 这里添加下载逻辑
+  // let url = shareLink.value
+  const link = document.createElement('a')
+  link.href = shareLink.value.slice(0, -4)
+  // link.download = file.name // 设置下载文件名
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+
+  console.log('下载文件...', shareLink.value, downloadPath.value)
+  showLinkDownload.value = false
 }
 </script>
 
@@ -118,8 +150,8 @@ const exit = async () =>{
                     </span>
           <template #dropdown>
             <el-dropdown-menu>
-<!--              <el-dropdown-item command="profile" :icon="User">基本资料</el-dropdown-item>-->
-<!--              <el-dropdown-item command="avatar" :icon="Crop">更换头像</el-dropdown-item>-->
+<!--              <el-dropdown-item command="profile" :icon="Setting" @click="showSettings = true">设置</el-dropdown-item>-->
+                <el-dropdown-item command="avatar" :icon="Paperclip" @click="showLinkDownload = true">使用链接下载</el-dropdown-item>
 <!--              <el-dropdown-item command="password" :icon="EditPen">重置密码</el-dropdown-item>-->
               <el-dropdown-item command="logout" :icon="SwitchButton" @click = "exit">退出登录</el-dropdown-item>
             </el-dropdown-menu>
@@ -135,11 +167,130 @@ const exit = async () =>{
       <el-footer>咸鱼网盘 ©2025 Created by 溪云流雨</el-footer>
     </el-container>
   </el-container>
+
+
+  <el-dialog
+      v-model="showSettings"
+      title="下载设置"
+      width="500px"
+      align-center
+      class="custom-dialog"
+  >
+    <div class="setting-content">
+      <el-input
+          v-model="downLoadPathStore.downLoadPath"
+          :disabled="!editMode"
+          placeholder="请输入默认下载路径"
+      >
+        <template #append>
+          <el-button
+              :icon="editMode ? Check : Edit"
+              @click="toggleEdit"
+              :type="editMode ? 'success' : 'primary'"
+              circle
+          />
+        </template>
+      </el-input>
+      <div class="tip-text">提示：修改后将会影响默认下载位置</div>
+    </div>
+    <template #footer>
+      <el-button @click="showSettings = false">关闭</el-button>
+    </template>
+  </el-dialog>
+
+  <!-- 链接下载弹窗 -->
+  <el-dialog
+      v-model="showLinkDownload"
+      title="链接下载"
+      width="500px"
+      align-center
+      class="custom-dialog"
+  >
+    <div class="link-download-content">
+      <el-input
+          v-model="shareLink"
+          placeholder="请输入文件分享链接"
+          clearable
+          class="mb-4"
+      >
+        <template #prepend>链接</template>
+      </el-input>
+
+<!--      <el-input-->
+<!--          v-model="downloadPath"-->
+<!--          placeholder="请输入下载保存路径"-->
+<!--          clearable-->
+<!--      >-->
+<!--        <template #prepend>路径</template>-->
+<!--      </el-input>-->
+    </div>
+    <template #footer>
+      <el-button @click="showLinkDownload = false">取消</el-button>
+      <el-button
+          type="primary"
+          @click="handleDownload"
+          :icon="Download"
+      >
+        开始下载
+      </el-button>
+    </template>
+  </el-dialog>
 </template>
+
 
 <style lang="scss" scoped>
 
+.custom-dialog {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 
+  :deep(.el-dialog__header) {
+    border-bottom: 1px solid #eee;
+    margin-right: 0;
+    padding: 16px 24px;
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 24px;
+  }
+}
+
+.setting-content {
+  .tip-text {
+    color: #999;
+    font-size: 12px;
+    margin-top: 8px;
+    padding-left: 4px;
+  }
+}
+
+.link-download-content {
+  :deep(.el-input-group__prepend) {
+    background: rgba(64, 158, 255, 0.1);
+    color: #409EFF;
+    width: 60px;
+    justify-content: center;
+  }
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+// 按钮动画
+.el-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &[type='primary'] {
+    &:hover {
+      box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+    }
+  }
+}
 
 //
 

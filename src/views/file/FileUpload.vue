@@ -4,13 +4,47 @@ import {
   UploadFilled,
   VideoPause,
   Promotion,
-  CircleClose
+  CircleClose, VideoPlay,CircleCheck
 } from '@element-plus/icons-vue'
-import openFile from '@/utils/openFile.js'
-import {ref} from "vue";
+import {useUploadListStore} from "@/stores/uploadList.js";
+import {usePathStore} from "@/stores/path.js";
+import {ElMessage} from "element-plus";
+import router from "@/router/index.js";
+import {useActiveStore} from "@/stores/active.js";
+import {hasFolder} from "@/api/file.js";
+import {useTokenStore} from "@/stores/token.js";
+const tokenStore = useTokenStore();
+const uploadListStore = useUploadListStore()
 
-const uploadList = ref([])
-const finishList = ref([])
+const deleteFinish = async (uuid) => {
+  uploadListStore.deleteFinishList(uuid)
+}
+
+const goFile = async (path) => {
+  const pathStore = usePathStore();
+  let temp = []
+  path.forEach((element) => {
+    temp.push(element);
+  });
+  let result = await hasFolder(tokenStore.token,temp[temp.length - 1]);
+  if (result.data) {
+    pathStore.setPath(temp)
+    const name = pathStore.path.pop()
+    ElMessage.success({
+      message: `该文件储存为当前目录下的：` + name,
+      duration: 10000,
+    })
+    const activeStore = useActiveStore();
+    activeStore.setActive('/main/file/FileManage');
+    await router.push('/main/file/FileManage');
+  }else {
+    ElMessage.warning({
+      message: `该文件已不存在`,
+      duration: 10000,
+    })
+  }
+}
+
 </script>
 
 <template>
@@ -24,7 +58,7 @@ const finishList = ref([])
           </span>
         </template>
         <div class="transfer-section">
-          <el-table :data="uploadList" style="width: 100%" height="70vh">
+          <el-table :data="uploadListStore.uploadList" style="width: 100%" height="70vh">
             <el-table-column prop="fileName" label="文件名" width="500" >
               <template #default="{ row }">
                 <el-icon class="file-icon">
@@ -61,49 +95,8 @@ const finishList = ref([])
                     size="small"
                 />
                 <el-button
-                    :icon="CircleClose"
-                    type="danger"
-                    circle
-                    size="small"
-                />
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-      </el-tab-pane>
-
-      <el-tab-pane name="download">
-        <template #label>
-          <span class="custom-tab-label">
-            <el-icon><Promotion/></el-icon>
-            上传完成
-          </span>
-        </template>
-        <div class="transfer-section">
-          <el-table :data="finishList" style="width: 100%" height="70vh">
-            <el-table-column prop="fileName" label="文件名" width="500" >
-              <template #default="{ row }">
-                <el-icon class="file-icon">
-                  <Document />
-                </el-icon>
-                {{ row.fileName }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="finishData" label="下载日期" width="300"/>
-
-            <el-table-column prop="fileSize" label="文件大小" width="200" />
-            <el-table-column label="查看文件" width="150" >
-              <template #default="{ row }">
-                <el-button size="small" @click = openFile.handleOpenFolder(row.filePath)>
-                  前往
-                </el-button>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="150" >
-              <template #default="{ row }">
-                <el-button
-                    v-if="row.status === '传输中'"
-                    :icon="VideoPause"
+                    v-if="row.status === '已暂停'"
+                    :icon="VideoPlay"
                     type="warning"
                     circle
                     size="small"
@@ -116,9 +109,75 @@ const finishList = ref([])
                 />
               </template>
             </el-table-column>
+            <template #empty>
+              <el-empty
+                  description="暂无上传任务"
+                  image-size="120"
+                  class="custom-empty"
+              >
+                <template #image>
+                  <el-icon :size="60" color="#C0C4CC"><Document /></el-icon>
+                </template>
+              </el-empty>
+            </template>
+          </el-table>
+        </div>
+
+      </el-tab-pane>
+
+      <el-tab-pane name="download">
+        <template #label>
+          <span class="custom-tab-label">
+            <el-icon><Promotion/></el-icon>
+            上传完成
+          </span>
+        </template>
+        <div class="transfer-section">
+          <el-table :data="uploadListStore.finishList" style="width: 100%" height="70vh">
+            <el-table-column prop="fileName" label="文件名" width="500" >
+              <template #default="{ row }">
+                <el-icon class="file-icon">
+                  <Document />
+                </el-icon>
+                {{ row.fileName }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="finishData" label="下载日期" width="300"/>
+            <el-table-column prop="fileSize" label="文件大小" width="200" />
+            <el-table-column label="查看文件" width="150" >
+              <template #default="{ row }">
+                <el-button size="small" @click = goFile(row.path)>
+                  前往
+                </el-button>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="150" >
+              <template #default="{ row }">
+                <el-button
+                    :icon="CircleClose"
+                    type="danger"
+                    circle
+                    size="small"
+                    @click = deleteFinish(row.uuid)
+                />
+              </template>
+            </el-table-column>
+            <template #empty>
+              <el-empty
+                  description="暂无已完成上传"
+                  image-size="120"
+                  class="custom-empty"
+              >
+                <template #image>
+                  <el-icon :size="60" color="#67C23A"><CircleCheck /></el-icon>
+                </template>
+              </el-empty>
+            </template>
           </el-table>
         </div>
       </el-tab-pane>
+
+
     </el-tabs>
   </div>
 </template>
@@ -137,11 +196,6 @@ export default {
         '已暂停': 'warning',
         '失败': 'danger'
       }
-    }
-  },
-  methods: {
-    handleTabClick(tab) {
-      console.log('当前标签页:', tab.props.name)
     }
   }
 }
