@@ -432,11 +432,18 @@ const handleFileChange = async (file) => {
   const result = await fileUpdateService(tokenStore.token,pathStore.path[pathStore.path.length - 1],data,file.name,uuid);
   const uploadListStore = useUploadListStore()
   const temp = []
-  pathStore.path.forEach((element) => {
-    temp.push(element);
-  });
-  temp.push(result.data)
-  uploadListStore.getFinishList(uuid).path = temp
+  if(result.code === 1){
+    ElMessage.error({
+      message: result.msg,
+      duration: 2000
+    })
+  }else {
+    pathStore.path.forEach((element) => {
+      temp.push(element);
+    });
+    temp.push(result.data)
+    uploadListStore.getFinishList(uuid).path = temp
+  }
 }
 //单个删除
 const handleDeleteConfirm = (file) => {

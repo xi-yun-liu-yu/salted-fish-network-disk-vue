@@ -475,7 +475,7 @@ const handleAvatarChange = async (event) => {
     var data = new FormData();
     data.append('file', file);
     const type = file.type.substring(file.type.indexOf('/') + 1)
-    const temp = userStore.avatarUrl.split('/')
+    const temp = (userStore?.avatarUrl || '').split('/');
     const fileName = temp[temp.length - 1]
     const result = await userAvatarService(tokenStore.token,data,type,fileName);
     userStore.avatarUrl = result.data;
